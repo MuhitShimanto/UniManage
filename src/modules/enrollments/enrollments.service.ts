@@ -5,6 +5,33 @@ import { recordAuditLog } from '../../utils/auditLog';
 
 const MAX_CREDITS_PER_SEMESTER = 18;
 
+function parseScheduleSlot(slot: string): { days: string[]; startMin: number; endMin: number } | null {
+  const match = slot
+    .trim()
+    .toUpperCase()
+    .match(/^([A-Z-]+)\s+(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+
+  const days = match[1].split('-').filter(Boolean);
+  const startMin = Number(match[2]) * 60 + Number(match[3]);
+  const endMin = Number(match[4]) * 60 + Number(match[5]);
+  if (Number.isNaN(startMin) || Number.isNaN(endMin) || startMin >= endMin) return null;
+
+  return { days, startMin, endMin };
+}
+
+function hasScheduleClash(slotA: string, slotB: string): boolean {
+  if (slotA.trim().toUpperCase() === slotB.trim().toUpperCase()) return true;
+  const a = parseScheduleSlot(slotA);
+  const b = parseScheduleSlot(slotB);
+  if (!a || !b) return false;
+
+  const sharesDay = a.days.some((d) => b.days.includes(d));
+  if (!sharesDay) return false;
+
+  return a.startMin < b.endMin && b.startMin < a.endMin;
+}
+
 export async function enrollInSection(userId: string, sectionId: string) {
   const student = await prisma.studentProfile.findUnique({ where: { userId } });
   if (!student) {
@@ -70,7 +97,7 @@ export async function enrollInSection(userId: string, sectionId: string) {
       }
     }
 
-    // Check max credit limit for the semester
+    // Check max credit limit & schedule clashes for the semester
     const currentEnrollments = await tx.enrollment.findMany({
       where: {
         studentId: student.id,
@@ -78,8 +105,22 @@ export async function enrollInSection(userId: string, sectionId: string) {
         deletedAt: null,
         section: { semesterId: section.semesterId },
       },
-      include: { section: { include: { course: { select: { credits: true } } } } },
+      include: {
+        section: {
+          include: { course: { select: { code: true, credits: true } } },
+        },
+      },
     });
+
+    const clashingEnrollment = currentEnrollments.find((e) =>
+      hasScheduleClash(e.section.scheduleSlot, section.scheduleSlot)
+    );
+    if (clashingEnrollment) {
+      throw new AppError(
+        `Schedule conflict with ${clashingEnrollment.section.course.code} (${clashingEnrollment.section.scheduleSlot}).`,
+        409
+      );
+    }
 
     const currentCredits = currentEnrollments.reduce(
       (sum, e) => sum + e.section.course.credits,
