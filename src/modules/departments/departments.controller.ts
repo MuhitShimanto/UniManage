@@ -15,7 +15,7 @@ export const list = asyncHandler(async (_req: Request, res: Response) => {
 
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const dept = await departmentsService.updateDepartment(
-    req.params.id,
+    String(req.params.id),
     req.body,
     req.user!.userId
   );
@@ -23,6 +23,6 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  await departmentsService.softDeleteDepartment(req.params.id, req.user!.userId);
+  await departmentsService.softDeleteDepartment(String(req.params.id), req.user!.userId);
   return sendSuccess(res, 'Department soft-deleted successfully', null);
 });
