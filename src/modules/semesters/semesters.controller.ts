@@ -35,3 +35,17 @@ export const getSectionEnrollments = asyncHandler(async (req: Request, res: Resp
   );
   return sendSuccess(res, 'Section enrollments retrieved successfully', section);
 });
+
+export const updateSection = asyncHandler(async (req: Request, res: Response) => {
+  const section = await semestersService.updateSection(
+    String(req.params.id),
+    req.body,
+    req.user!.userId
+  );
+  return sendSuccess(res, 'Section updated successfully', section);
+});
+
+export const deleteSection = asyncHandler(async (req: Request, res: Response) => {
+  await semestersService.deleteSection(String(req.params.id), req.user!.userId);
+  return sendSuccess(res, 'Section deleted successfully', null);
+});

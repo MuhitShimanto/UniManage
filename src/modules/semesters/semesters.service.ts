@@ -131,3 +131,75 @@ export async function getSectionEnrollments(sectionId: string, actorId: string, 
 
   return section;
 }
+
+export async function updateSection(
+  sectionId: string,
+  data: {
+    instructorId?: string;
+    sectionCode?: string;
+    maxCapacity?: number;
+    scheduleSlot?: string;
+    room?: string | null;
+  },
+  actorId: string
+) {
+  const existing = await prisma.section.findFirst({ where: { id: sectionId, deletedAt: null } });
+  if (!existing) throw new AppError('Section not found.', 404);
+
+  if (data.instructorId) {
+    const instructor = await prisma.instructorProfile.findUnique({
+      where: { id: data.instructorId },
+    });
+    if (!instructor) throw new AppError('Instructor profile not found.', 404);
+  }
+
+  if (data.maxCapacity !== undefined && data.maxCapacity < existing.enrolledCount) {
+    throw new AppError(
+      `Max capacity cannot be less than currently enrolled students (${existing.enrolledCount}).`,
+      400
+    );
+  }
+
+  const updated = await prisma.section.update({
+    where: { id: sectionId },
+    data,
+    include: {
+      course: { select: { id: true, code: true, title: true, credits: true } },
+      semester: { select: { id: true, name: true, isCurrent: true, registrationOpen: true } },
+      instructor: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
+    },
+  });
+
+  await recordAuditLog({
+    actorId,
+    action: 'SECTION_UPDATED',
+    entityType: 'Section',
+    entityId: sectionId,
+  });
+
+  return updated;
+}
+
+export async function deleteSection(sectionId: string, actorId: string) {
+  const existing = await prisma.section.findFirst({ where: { id: sectionId, deletedAt: null } });
+  if (!existing) throw new AppError('Section not found.', 404);
+
+  const enrollmentCount = await prisma.enrollment.count({
+    where: { sectionId, deletedAt: null },
+  });
+  if (enrollmentCount > 0) {
+    throw new AppError('Cannot delete a section that has enrolled students.', 409);
+  }
+
+  await prisma.section.delete({ where: { id: sectionId } });
+  await recordAuditLog({
+    actorId,
+    action: 'SECTION_DELETED',
+    entityType: 'Section',
+    entityId: sectionId,
+  });
+}

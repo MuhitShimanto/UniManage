@@ -4,7 +4,11 @@ import { authenticate } from '../../middlewares/auth.middleware';
 import { authorize } from '../../middlewares/role.middleware';
 import { validate } from '../../middlewares/validate.middleware';
 import * as semestersController from './semesters.controller';
-import { createSectionSchema, createSemesterSchema } from './semesters.validation';
+import {
+  createSectionSchema,
+  createSemesterSchema,
+  updateSectionSchema,
+} from './semesters.validation';
 
 export const semesterRouter = Router();
 semesterRouter.get('/', semestersController.listSemesters);
@@ -30,4 +34,17 @@ sectionRouter.post(
   authorize(Role.ADMIN),
   validate(createSectionSchema),
   semestersController.createSection
+);
+sectionRouter.patch(
+  '/:id',
+  authenticate,
+  authorize(Role.ADMIN),
+  validate(updateSectionSchema),
+  semestersController.updateSection
+);
+sectionRouter.delete(
+  '/:id',
+  authenticate,
+  authorize(Role.ADMIN),
+  semestersController.deleteSection
 );

@@ -23,3 +23,13 @@ export const createSectionSchema = z.object({
     room: z.string().max(30).optional(),
   }),
 });
+
+export const updateSectionSchema = z.object({
+  body: z.object({
+    instructorId: z.string().min(1).optional(),
+    sectionCode: z.string().min(1).max(10).toUpperCase().optional(),
+    maxCapacity: z.number().int().min(5).max(300).optional(),
+    scheduleSlot: z.string().min(3).max(60).optional(),
+    room: z.string().max(30).optional().nullable(),
+  }),
+});
