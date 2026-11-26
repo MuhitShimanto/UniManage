@@ -58,12 +58,28 @@ export async function enrollInSection(userId: string, sectionId: string) {
       throw new AppError(`Course registration is closed for ${section.semester.name}.`, 400);
     }
 
+    // Check if student already completed this course in any semester
+    const alreadyCompleted = await tx.enrollment.findFirst({
+      where: {
+        studentId: student.id,
+        deletedAt: null,
+        status: EnrollmentStatus.COMPLETED,
+        section: {
+          courseId: section.courseId,
+        },
+        OR: [{ examResult: null }, { examResult: { gradePoint: { gt: 0 } } }],
+      },
+    });
+    if (alreadyCompleted) {
+      throw new AppError('You have already completed this course.', 409);
+    }
+
     // Check duplicate enrollment in same course for the same semester
     const existingSameCourse = await tx.enrollment.findFirst({
       where: {
         studentId: student.id,
         deletedAt: null,
-        status: { in: [EnrollmentStatus.ENROLLED, EnrollmentStatus.COMPLETED] },
+        status: EnrollmentStatus.ENROLLED,
         section: {
           courseId: section.courseId,
           semesterId: section.semesterId,
