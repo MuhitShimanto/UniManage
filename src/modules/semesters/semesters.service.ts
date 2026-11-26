@@ -1,3 +1,4 @@
+import { Role } from '@prisma/client';
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../utils/appError';
 import { recordAuditLog } from '../../utils/auditLog';
@@ -92,4 +93,41 @@ export async function listSections(filters: {
     },
     orderBy: { createdAt: 'desc' },
   });
+}
+
+export async function getSectionEnrollments(sectionId: string, actorId: string, actorRole: Role) {
+  const section = await prisma.section.findFirst({
+    where: { id: sectionId, deletedAt: null },
+    include: {
+      course: { select: { id: true, code: true, title: true, credits: true, syllabusUrl: true } },
+      semester: { select: { id: true, name: true, isCurrent: true } },
+      instructor: {
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+        },
+      },
+      enrollments: {
+        where: { deletedAt: null },
+        include: {
+          student: {
+            include: {
+              user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+            },
+          },
+          examResult: true,
+          attendances: {
+            orderBy: { date: 'desc' },
+          },
+        },
+        orderBy: { enrolledAt: 'asc' },
+      },
+    },
+  });
+
+  if (!section) throw new AppError('Section not found.', 404);
+  if (actorRole === Role.INSTRUCTOR && section.instructor.userId !== actorId) {
+    throw new AppError('Forbidden: you are not assigned to this section.', 403);
+  }
+
+  return section;
 }

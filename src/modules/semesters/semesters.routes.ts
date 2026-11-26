@@ -18,6 +18,12 @@ semesterRouter.post(
 
 export const sectionRouter = Router();
 sectionRouter.get('/', semestersController.listSections);
+sectionRouter.get(
+  '/:id/enrollments',
+  authenticate,
+  authorize(Role.INSTRUCTOR, Role.ADMIN),
+  semestersController.getSectionEnrollments
+);
 sectionRouter.post(
   '/',
   authenticate,

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { env } from '../../config/env';
 import { asyncHandler } from '../../utils/asyncHandler';
 import { sendSuccess } from '../../utils/apiResponse';
 import * as paymentsService from './payments.service';
@@ -20,17 +21,26 @@ export const initiate = asyncHandler(async (req: Request, res: Response) => {
 
 export const sslCommerzSuccess = asyncHandler(async (req: Request, res: Response) => {
   const payment = await paymentsService.handleSslCommerzCallback('success', req.body);
-  return sendSuccess(res, 'SSLCommerz payment verified successfully', payment);
+  return res.redirect(
+    302,
+    `${env.FRONTEND_URL}/payment/success?tran_id=${encodeURIComponent(payment.transactionId)}`
+  );
 });
 
 export const sslCommerzFail = asyncHandler(async (req: Request, res: Response) => {
   const payment = await paymentsService.handleSslCommerzCallback('fail', req.body);
-  return sendSuccess(res, 'SSLCommerz payment failure recorded', payment);
+  return res.redirect(
+    302,
+    `${env.FRONTEND_URL}/payment/cancel?tran_id=${encodeURIComponent(payment.transactionId)}&status=failed`
+  );
 });
 
 export const sslCommerzCancel = asyncHandler(async (req: Request, res: Response) => {
   const payment = await paymentsService.handleSslCommerzCallback('cancel', req.body);
-  return sendSuccess(res, 'SSLCommerz payment cancellation recorded', payment);
+  return res.redirect(
+    302,
+    `${env.FRONTEND_URL}/payment/cancel?tran_id=${encodeURIComponent(payment.transactionId)}&status=cancelled`
+  );
 });
 
 export const sslCommerzIpn = asyncHandler(async (req: Request, res: Response) => {

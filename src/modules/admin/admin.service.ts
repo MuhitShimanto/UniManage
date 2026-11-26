@@ -37,6 +37,21 @@ export async function listUsers(params: {
         role: true,
         isActive: true,
         createdAt: true,
+        studentProfile: {
+          select: {
+            id: true,
+            studentCode: true,
+            programId: true,
+          },
+        },
+        instructorProfile: {
+          select: {
+            id: true,
+            employeeCode: true,
+            designation: true,
+            departmentId: true,
+          },
+        },
       },
     }),
     prisma.user.count({ where }),

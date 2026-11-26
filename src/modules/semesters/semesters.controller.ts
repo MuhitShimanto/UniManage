@@ -26,3 +26,12 @@ export const listSections = asyncHandler(async (req: Request, res: Response) => 
   });
   return sendSuccess(res, 'Sections retrieved successfully', sections);
 });
+
+export const getSectionEnrollments = asyncHandler(async (req: Request, res: Response) => {
+  const section = await semestersService.getSectionEnrollments(
+    String(req.params.id),
+    req.user!.userId,
+    req.user!.role
+  );
+  return sendSuccess(res, 'Section enrollments retrieved successfully', section);
+});
