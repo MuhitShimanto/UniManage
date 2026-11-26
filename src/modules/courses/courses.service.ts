@@ -194,11 +194,16 @@ export async function uploadCourseSyllabus(
   return updated;
 }
 
-export async function softDeleteCourse(id: string, actorId: string) {
-  const existing = await prisma.course.findFirst({ where: { id, deletedAt: null } });
+export async function deleteCourse(id: string, actorId: string) {
+  const existing = await prisma.course.findUnique({ where: { id } });
   if (!existing) throw new AppError('Course not found.', 404);
 
-  await prisma.course.update({ where: { id }, data: { deletedAt: new Date() } });
+  const sectionCount = await prisma.section.count({ where: { courseId: id } });
+  if (sectionCount > 0) {
+    throw new AppError('Cannot delete a course that has existing sections.', 409);
+  }
+
+  await prisma.course.delete({ where: { id } });
   await cache.invalidatePrefix(CACHE_PREFIX);
   await recordAuditLog({
     actorId,

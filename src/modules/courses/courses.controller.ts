@@ -45,6 +45,6 @@ export const uploadSyllabus = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const remove = asyncHandler(async (req: Request, res: Response) => {
-  await coursesService.softDeleteCourse(String(req.params.id), req.user!.userId);
-  return sendSuccess(res, 'Course soft-deleted successfully', null);
+  await coursesService.deleteCourse(String(req.params.id), req.user!.userId);
+  return sendSuccess(res, 'Course deleted successfully', null);
 });
