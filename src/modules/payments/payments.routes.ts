@@ -8,8 +8,7 @@ import { createInvoiceSchema, initiatePaymentSchema } from './payments.validatio
 
 const router = Router();
 
-// Gateway callbacks (publicly reachable by bKash / SSLCommerz servers)
-router.get('/bkash/callback', paymentsController.bkashCallback);
+// Gateway callbacks (publicly reachable by SSLCommerz servers)
 router.post('/sslcommerz/success', paymentsController.sslCommerzSuccess);
 router.post('/sslcommerz/fail', paymentsController.sslCommerzFail);
 router.post('/sslcommerz/cancel', paymentsController.sslCommerzCancel);

@@ -1,7 +1,7 @@
 {
   "name": "university-management-backend",
   "version": "1.0.0",
-  "description": "University Management System RESTful API built with Node.js, TypeScript, Express, PostgreSQL, Prisma, Redis, Multer/Cloudinary, bKash, and SSLCommerz",
+  "description": "University Management System RESTful API built with Node.js, TypeScript, Express, PostgreSQL, Prisma, Redis, Multer/Cloudinary, and SSLCommerz",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

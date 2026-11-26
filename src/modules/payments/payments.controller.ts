@@ -18,13 +18,6 @@ export const initiate = asyncHandler(async (req: Request, res: Response) => {
   return sendSuccess(res, 'Payment session initiated successfully', session, 201);
 });
 
-export const bkashCallback = asyncHandler(async (req: Request, res: Response) => {
-  const payment = await paymentsService.handleBkashCallback(
-    req.query as { paymentID?: string; status?: string }
-  );
-  return sendSuccess(res, 'bKash callback processed', payment);
-});
-
 export const sslCommerzSuccess = asyncHandler(async (req: Request, res: Response) => {
   const payment = await paymentsService.handleSslCommerzCallback('success', req.body);
   return sendSuccess(res, 'SSLCommerz payment verified successfully', payment);

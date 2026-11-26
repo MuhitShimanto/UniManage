@@ -3,7 +3,6 @@ import crypto from 'crypto';
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../utils/appError';
 import { recordAuditLog } from '../../utils/auditLog';
-import { createBkashPayment, executeBkashPayment } from './bkash.gateway';
 import { initSslCommerzPayment, validateSslCommerzPayment } from './sslcommerz.gateway';
 
 export async function createFeeInvoice(
@@ -68,33 +67,15 @@ export async function initiatePayment(
 
   const transactionId = `UMS-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 
-  let gatewayUrl = '';
-  let gatewayPaymentId: string | undefined;
-  let gatewayRaw: unknown;
-
-  if (input.provider === PaymentProvider.BKASH) {
-    const bkash = await createBkashPayment({
-      amount: invoice.amount,
-      transactionId,
-      payerReference: student.studentCode,
-    });
-    gatewayUrl = bkash.gatewayUrl;
-    gatewayPaymentId = bkash.paymentID;
-    gatewayRaw = bkash.raw;
-  } else {
-    const ssl = await initSslCommerzPayment({
-      amount: invoice.amount,
-      currency: invoice.currency,
-      transactionId,
-      productName: invoice.title,
-      customerName: student.user.name,
-      customerEmail: student.user.email,
-      customerPhone: student.user.phone || '01700000000',
-    });
-    gatewayUrl = ssl.gatewayUrl;
-    gatewayPaymentId = ssl.sessionKey;
-    gatewayRaw = ssl.raw;
-  }
+  const ssl = await initSslCommerzPayment({
+    amount: invoice.amount,
+    currency: invoice.currency,
+    transactionId,
+    productName: invoice.title,
+    customerName: student.user.name,
+    customerEmail: student.user.email,
+    customerPhone: student.user.phone || '01700000000',
+  });
 
   const payment = await prisma.payment.create({
     data: {
@@ -104,9 +85,9 @@ export async function initiatePayment(
       amount: invoice.amount,
       currency: invoice.currency,
       transactionId,
-      gatewayPaymentId,
+      gatewayPaymentId: ssl.sessionKey,
       status: PaymentStatus.PENDING,
-      gatewayResponse: gatewayRaw as Prisma.InputJsonValue,
+      gatewayResponse: ssl.raw as Prisma.InputJsonValue,
     },
   });
 
@@ -115,7 +96,7 @@ export async function initiatePayment(
     transactionId: payment.transactionId,
     provider: payment.provider,
     amount: payment.amount,
-    gatewayUrl,
+    gatewayUrl: ssl.gatewayUrl,
   };
 }
 
@@ -145,50 +126,6 @@ async function markPaymentPaid(
 
     return updatedPayment;
   });
-}
-
-export async function handleBkashCallback(query: { paymentID?: string; status?: string }) {
-  if (!query.paymentID) {
-    throw new AppError('Missing paymentID in bKash callback.', 400);
-  }
-
-  const payment = await prisma.payment.findFirst({
-    where: { gatewayPaymentId: query.paymentID, provider: PaymentProvider.BKASH },
-  });
-  if (!payment) throw new AppError('bKash payment record not found.', 404);
-
-  if (query.status === 'cancel' || query.status === 'failure') {
-    const newStatus =
-      query.status === 'cancel' ? PaymentStatus.CANCELLED : PaymentStatus.FAILED;
-    return prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: newStatus },
-    });
-  }
-
-  const executed = await executeBkashPayment(query.paymentID);
-  if (executed.statusCode !== '0000' && executed.transactionStatus !== 'Completed') {
-    await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: PaymentStatus.FAILED,
-        gatewayResponse: executed as Prisma.InputJsonValue,
-      },
-    });
-    throw new AppError(
-      (executed.statusMessage as string) || 'bKash payment execution failed.',
-      400
-    );
-  }
-
-  const updated = await markPaymentPaid(payment.id, executed);
-  await recordAuditLog({
-    action: 'PAYMENT_PAID_BKASH',
-    entityType: 'Payment',
-    entityId: updated.id,
-    metadata: { transactionId: updated.transactionId },
-  });
-  return updated;
 }
 
 export async function handleSslCommerzCallback(

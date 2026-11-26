@@ -27,7 +27,6 @@ enum AttendanceStatus {
 }
 
 enum PaymentProvider {
-  BKASH
   SSLCOMMERZ
 }
 

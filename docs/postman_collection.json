@@ -140,7 +140,7 @@
       ]
     },
     {
-      "name": "Payments (bKash & SSLCommerz)",
+      "name": "Payments (SSLCommerz)",
       "item": [
         {
           "name": "Get My Fee Invoices",
@@ -151,7 +151,7 @@
           }
         },
         {
-          "name": "Initiate Payment (BKASH or SSLCOMMERZ)",
+          "name": "Initiate Payment (SSLCOMMERZ)",
           "request": {
             "method": "POST",
             "header": [

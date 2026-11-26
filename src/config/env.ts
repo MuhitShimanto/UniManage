@@ -19,13 +19,6 @@ export const env = {
   CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || '',
   CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
   CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
-  BKASH_BASE_URL: process.env.BKASH_BASE_URL || 'https://tokenized.sandbox.bka.sh/v1.2.0-beta',
-  BKASH_APP_KEY: process.env.BKASH_APP_KEY || '',
-  BKASH_APP_SECRET: process.env.BKASH_APP_SECRET || '',
-  BKASH_USERNAME: process.env.BKASH_USERNAME || '',
-  BKASH_PASSWORD: process.env.BKASH_PASSWORD || '',
-  BKASH_CALLBACK_URL:
-    process.env.BKASH_CALLBACK_URL || 'http://localhost:5000/api/v1/payments/bkash/callback',
   SSLCOMMERZ_STORE_ID: process.env.SSLCOMMERZ_STORE_ID || '',
   SSLCOMMERZ_STORE_PASSWORD: process.env.SSLCOMMERZ_STORE_PASSWORD || '',
   SSLCOMMERZ_IS_LIVE: process.env.SSLCOMMERZ_IS_LIVE === 'true',

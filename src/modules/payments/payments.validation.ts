@@ -15,6 +15,6 @@ export const createInvoiceSchema = z.object({
 export const initiatePaymentSchema = z.object({
   body: z.object({
     invoiceId: z.string().min(1),
-    provider: z.nativeEnum(PaymentProvider),
+    provider: z.nativeEnum(PaymentProvider).default(PaymentProvider.SSLCOMMERZ),
   }),
 });

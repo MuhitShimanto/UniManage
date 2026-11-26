@@ -4,7 +4,7 @@ export const swaggerDocument = {
     title: 'University Management System API',
     version: '1.0.0',
     description:
-      'RESTful Backend API for University Management System with 3-Role RBAC (STUDENT, INSTRUCTOR, ADMIN), Neon PostgreSQL + Prisma, Google OAuth, Multer + Cloudinary, Redis Caching, and bKash + SSLCommerz Payment Gateways.',
+      'RESTful Backend API for University Management System with 3-Role RBAC (STUDENT, INSTRUCTOR, ADMIN), Neon PostgreSQL + Prisma, Google OAuth, Multer + Cloudinary, Redis Caching, and SSLCommerz Payment Gateway.',
   },
   servers: [{ url: '/api/v1', description: 'API v1' }],
   components: {
@@ -137,10 +137,7 @@ export const swaggerDocument = {
       get: { tags: ['Payments'], summary: 'Get my fee invoices (STUDENT)', security: [{ bearerAuth: [] }], responses: { 200: { description: 'OK' } } },
     },
     '/payments/initiate': {
-      post: { tags: ['Payments'], summary: 'Initiate bKash or SSLCommerz payment (STUDENT)', security: [{ bearerAuth: [] }], responses: { 201: { description: 'Session created' } } },
-    },
-    '/payments/bkash/callback': {
-      get: { tags: ['Payments'], summary: 'bKash callback handler (executes & verifies)', responses: { 200: { description: 'Processed' } } },
+      post: { tags: ['Payments'], summary: 'Initiate SSLCommerz payment (STUDENT)', security: [{ bearerAuth: [] }], responses: { 201: { description: 'Session created' } } },
     },
     '/payments/sslcommerz/success': {
       post: { tags: ['Payments'], summary: 'SSLCommerz success callback (validates val_id)', responses: { 200: { description: 'Verified' } } },
