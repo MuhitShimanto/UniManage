@@ -1,0 +1,336 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  DROPPED
+  COMPLETED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum PaymentProvider {
+  BKASH
+  SSLCOMMERZ
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+model User {
+  id               String             @id @default(cuid())
+  email            String             @unique
+  passwordHash     String?
+  googleId         String?            @unique
+  name             String
+  avatarUrl        String?
+  phone            String?
+  role             Role               @default(STUDENT)
+  isActive         Boolean            @default(true)
+  refreshTokenHash String?
+  deletedAt        DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  studentProfile    StudentProfile?
+  instructorProfile InstructorProfile?
+  auditLogs         AuditLog[]
+
+  @@index([role])
+  @@index([deletedAt])
+  @@index([createdAt])
+}
+
+model StudentProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  studentCode   String   @unique
+  programId     String
+  admissionYear Int
+  currentCgpa   Float    @default(0.0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program     Program      @relation(fields: [programId], references: [id])
+  enrollments Enrollment[]
+  feeInvoices FeeInvoice[]
+  payments    Payment[]
+
+  @@index([programId])
+}
+
+model InstructorProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  employeeCode String   @unique
+  departmentId String
+  designation  String   @default("Lecturer")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department @relation(fields: [departmentId], references: [id])
+  sections   Section[]
+
+  @@index([departmentId])
+}
+
+model Department {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  name        String
+  description String?
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  programs    Program[]
+  courses     Course[]
+  instructors InstructorProfile[]
+
+  @@index([deletedAt])
+}
+
+model Program {
+  id                   String    @id @default(cuid())
+  code                 String    @unique
+  name                 String
+  totalCreditsRequired Int       @default(120)
+  departmentId         String
+  deletedAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  department Department       @relation(fields: [departmentId], references: [id])
+  courses    Course[]
+  students   StudentProfile[]
+
+  @@index([departmentId])
+  @@index([deletedAt])
+}
+
+model Course {
+  id           String    @id @default(cuid())
+  code         String    @unique
+  title        String
+  description  String?
+  credits      Int       @default(3)
+  syllabusUrl  String?
+  departmentId String
+  programId    String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  department       Department           @relation(fields: [departmentId], references: [id])
+  program          Program?             @relation(fields: [programId], references: [id])
+  sections         Section[]
+  prerequisites    CoursePrerequisite[] @relation("CourseToPrereq")
+  prerequisiteFor  CoursePrerequisite[] @relation("PrereqToCourse")
+
+  @@index([departmentId])
+  @@index([programId])
+  @@index([deletedAt])
+}
+
+model CoursePrerequisite {
+  id             String @id @default(cuid())
+  courseId       String
+  prerequisiteId String
+
+  course       Course @relation("CourseToPrereq", fields: [courseId], references: [id], onDelete: Cascade)
+  prerequisite Course @relation("PrereqToCourse", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, prerequisiteId])
+}
+
+model Semester {
+  id               String    @id @default(cuid())
+  name             String    @unique
+  year             Int
+  term             String
+  startDate        DateTime
+  endDate          DateTime
+  isCurrent        Boolean   @default(false)
+  registrationOpen Boolean   @default(true)
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sections    Section[]
+  feeInvoices FeeInvoice[]
+
+  @@index([isCurrent])
+  @@index([deletedAt])
+}
+
+model Section {
+  id            String    @id @default(cuid())
+  courseId      String
+  semesterId    String
+  instructorId  String
+  sectionCode   String
+  maxCapacity   Int       @default(40)
+  enrolledCount Int       @default(0)
+  scheduleSlot  String
+  room          String?
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  course      Course            @relation(fields: [courseId], references: [id])
+  semester    Semester          @relation(fields: [semesterId], references: [id])
+  instructor  InstructorProfile @relation(fields: [instructorId], references: [id])
+  enrollments Enrollment[]
+
+  @@unique([courseId, semesterId, sectionCode])
+  @@index([semesterId])
+  @@index([instructorId])
+  @@index([deletedAt])
+}
+
+model Enrollment {
+  id         String           @id @default(cuid())
+  studentId  String
+  sectionId  String
+  status     EnrollmentStatus @default(ENROLLED)
+  enrolledAt DateTime         @default(now())
+  droppedAt  DateTime?
+  deletedAt  DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  section     Section        @relation(fields: [sectionId], references: [id])
+  attendances Attendance[]
+  examResult  ExamResult?
+
+  @@unique([studentId, sectionId])
+  @@index([studentId])
+  @@index([sectionId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  date         DateTime
+  status       AttendanceStatus @default(PRESENT)
+  remarks      String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, date])
+  @@index([enrollmentId])
+  @@index([date])
+}
+
+model ExamResult {
+  id              String   @id @default(cuid())
+  enrollmentId    String   @unique
+  attendanceScore Float    @default(0)
+  assignmentScore Float    @default(0)
+  midtermScore    Float    @default(0)
+  finalScore      Float    @default(0)
+  totalScore      Float    @default(0)
+  grade           String   @default("F")
+  gradePoint      Float    @default(0.0)
+  isPublished     Boolean  @default(false)
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@index([isPublished])
+}
+
+model FeeInvoice {
+  id          String        @id @default(cuid())
+  studentId   String
+  semesterId  String
+  title       String
+  amount      Float
+  currency    String        @default("BDT")
+  status      PaymentStatus @default(PENDING)
+  dueDate     DateTime
+  paidAt      DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  student  StudentProfile @relation(fields: [studentId], references: [id])
+  semester Semester       @relation(fields: [semesterId], references: [id])
+  payments Payment[]
+
+  @@index([studentId])
+  @@index([semesterId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model Payment {
+  id               String          @id @default(cuid())
+  invoiceId        String
+  studentId        String
+  provider         PaymentProvider
+  amount           Float
+  currency         String          @default("BDT")
+  transactionId    String          @unique
+  gatewayPaymentId String?
+  status           PaymentStatus   @default(PENDING)
+  gatewayResponse  Json?
+  paidAt           DateTime?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  invoice FeeInvoice     @relation(fields: [invoiceId], references: [id])
+  student StudentProfile @relation(fields: [studentId], references: [id])
+
+  @@index([invoiceId])
+  @@index([studentId])
+  @@index([status])
+  @@index([provider])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entityType])
+  @@index([createdAt])
+}
