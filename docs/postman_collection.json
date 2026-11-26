@@ -1,0 +1,192 @@
+{
+  "info": {
+    "name": "University Management System API v1",
+    "_postman_id": "ums-api-v1-collection",
+    "description": "Complete Postman Collection for University Management System Backend (B7A6)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login (Admin / Instructor / Student)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@university.edu\",\n  \"password\": \"Password@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register Student",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grace Hopper\",\n  \"email\": \"grace@university.edu\",\n  \"password\": \"Password@123\",\n  \"programId\": \"REPLACE_PROGRAM_ID\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Google Social Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/google",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"idToken\": \"GOOGLE_ID_TOKEN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/refresh-token",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/users/me"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/users/me",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Academic Catalog",
+      "item": [
+        {
+          "name": "List Departments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/departments" }
+        },
+        {
+          "name": "List Courses (Paginated & Search)",
+          "request": { "method": "GET", "url": "{{baseUrl}}/courses?page=1&limit=10&q=CSE" }
+        },
+        {
+          "name": "List Sections",
+          "request": { "method": "GET", "url": "{{baseUrl}}/sections" }
+        }
+      ]
+    },
+    {
+      "name": "Enrollment, Attendance & Results",
+      "item": [
+        {
+          "name": "Enroll in Section (Student)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/enrollments",
+            "body": { "mode": "raw", "raw": "{\n  \"sectionId\": \"REPLACE_SECTION_ID\"\n}" }
+          }
+        },
+        {
+          "name": "Get My Enrollments (Student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/enrollments/my"
+          }
+        },
+        {
+          "name": "Get My Transcript & CGPA (Student)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/transcripts/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments (bKash & SSLCommerz)",
+      "item": [
+        {
+          "name": "Get My Fee Invoices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/payments/invoices/my"
+          }
+        },
+        {
+          "name": "Initiate Payment (BKASH or SSLCOMMERZ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/payments/initiate",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invoiceId\": \"REPLACE_INVOICE_ID\",\n  \"provider\": \"SSLCOMMERZ\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/dashboard-stats"
+          }
+        },
+        {
+          "name": "Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/admin/audit-logs"
+          }
+        }
+      ]
+    }
+  ]
+}
