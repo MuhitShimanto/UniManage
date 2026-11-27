@@ -22,6 +22,14 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(globalRateLimiter);
 
+app.get('/', (_req, res) => {
+  return sendSuccess(res, 'University Management System API is running', {
+    docs: '/api/docs',
+    health: '/health',
+    apiBase: '/api/v1',
+  });
+});
+
 app.get('/health', (_req, res) => {
   return sendSuccess(res, 'University Management System API is healthy', {
     status: 'UP',
